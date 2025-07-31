@@ -1,0 +1,216 @@
+[
+    {
+        "name": "Basic Passive Scan",
+        "description": "Performs a basic passive subdomain enumeration using default sources. This is the safest and fastest way to start.",
+        "options": {
+            "domain_entry": "owasp.org",
+            "passive_scan_var": true,
+            "output_file_entry": "owasp_passive.txt"
+        },
+        "example_output": "owasp.org\nwww.owasp.org\ndocs.owasp.org\ncommunity.owasp.org\n"
+    },
+    {
+        "name": "Active Scan with Brute Force",
+        "description": "Performs an active scan including brute-force enumeration with a custom wordlist. This can be noisy and take time.",
+        "options": {
+            "domain_entry": "example.com",
+            "active_scan_var": true,
+            "brute_force_var": true,
+            "wordlist_entry": "subdomains.txt",
+            "output_file_entry": "example_active_brute.txt"
+        },
+        "example_output": "example.com\nwww.example.com\ndev.example.com\napi.example.com\n"
+    },
+    {
+        "name": "Passive Scan with Specific Sources",
+        "description": "Uses only specific data sources (Certspotter, VirusTotal) for passive enumeration. Useful for targeted collection.",
+        "options": {
+            "domain_entry": "google.com",
+            "passive_scan_var": true,
+            "include_sources_entry": "certspotter,virustotal",
+            "output_file_entry": "google_src.txt"
+        },
+        "example_output": "google.com\nmail.google.com\ndrive.google.com\nsupport.google.com\n"
+    },
+    {
+        "name": "Active Scan with Custom Resolvers",
+        "description": "Performs an active scan using a list of custom DNS resolvers (e.g., Google DNS, Cloudflare DNS).",
+        "options": {
+            "domain_entry": "facebook.com",
+            "active_scan_var": true,
+            "resolvers_entry": "8.8.8.8,1.1.1.1",
+            "output_file_entry": "facebook_resolvers.txt"
+        },
+        "example_output": "facebook.com\nm.facebook.com\ndevelopers.facebook.com\n"
+    },
+    {
+        "name": "Output to JSON File",
+        "description": "Enumerates subdomains and saves the output in JSON format, useful for programmatic parsing.",
+        "options": {
+            "domain_entry": "twitter.com",
+            "passive_scan_var": true,
+            "json_output_file_entry": "twitter_output.json"
+        },
+        "example_output": "[{\"name\":\"twitter.com\",\"domain\":\"twitter.com\",\"addresses\":[{\"ip\":\"104.244.42.193\",\"cidr\":\"104.244.42.192/26\",\"asn\":13414,\"desc\":\"Twitter, Inc.\"}]},{\"name\":\"api.twitter.com\",\"domain\":\"twitter.com\",\"addresses\":[{\"ip\":\"104.244.42.194\",\"cidr\":\"104.244.42.192/26\",\"asn\":13414,\"desc\":\"Twitter, Inc.\"}]}]"
+    },
+    {
+        "name": "Silent Output",
+        "description": "Only prints the subdomain names to the console, without extra information. Good for piping to other tools.",
+        "options": {
+            "domain_entry": "microsoft.com",
+            "passive_scan_var": true,
+            "silent_var": true
+        },
+        "example_output": "microsoft.com\nwww.microsoft.com\ndocs.microsoft.com\n"
+    },
+    {
+        "name": "Exclude Specific Sources",
+        "description": "Runs a passive scan while excluding certain data sources (e.g., crt.sh).",
+        "options": {
+            "domain_entry": "apple.com",
+            "passive_scan_var": true,
+            "exclude_sources_entry": "crtsh",
+            "output_file_entry": "apple_no_crtsh.txt"
+        },
+        "example_output": "apple.com\nsupport.apple.com\ndeveloper.apple.com\n"
+    },
+    {
+        "name": "Limit DNS Queries",
+        "description": "Sets a maximum number of concurrent DNS queries to control scan speed and resource usage.",
+        "options": {
+            "domain_entry": "amazon.com",
+            "active_scan_var": true,
+            "max_dns_queries_entry": "500",
+            "output_file_entry": "amazon_limited_dns.txt"
+        },
+        "example_output": "amazon.com\naws.amazon.com\nprime.amazon.com\n"
+    },
+    {
+        "name": "Set Enumeration Timeout",
+        "description": "Sets a maximum time (e.g., 5 minutes) for the entire enumeration process to prevent scans from running indefinitely.",
+        "options": {
+            "domain_entry": "wikipedia.org",
+            "passive_scan_var": true,
+            "timeout_entry": "5m",
+            "output_file_entry": "wiki_timeout.txt"
+        },
+        "example_output": "wikipedia.org\nen.wikipedia.org\nde.wikipedia.org\n"
+    },
+    {
+        "name": "Use Custom Configuration File",
+        "description": "Runs Amass with a custom configuration file, allowing advanced persistent settings.",
+        "options": {
+            "domain_entry": "example.net",
+            "passive_scan_var": true,
+            "config_file_entry": "/etc/amass/config.ini",
+            "output_file_entry": "custom_config.txt"
+        },
+        "example_output": "example.net\nsub1.example.net\n"
+    },
+    {
+        "name": "Verbose Output",
+        "description": "Displays detailed information about the enumeration process, including sources and errors.",
+        "options": {
+            "domain_entry": "testphp.vulnweb.com",
+            "passive_scan_var": true,
+            "verbose_var": true,
+            "output_file_entry": "verbose_testphp.txt"
+        },
+        "example_output": "[OWASP Amass] Starting enumeration for testphp.vulnweb.com...\n[DNS] Resolved testphp.vulnweb.com to 172.16.1.1\n[Certspotter] Found subdomain: www.testphp.vulnweb.com\n[VirusTotal] Found subdomain: admin.testphp.vulnweb.com\n... (more verbose output)\n"
+    },
+    {
+        "name": "Recursive Brute Force",
+        "description": "Enables recursive brute-forcing, attempting to find sub-subdomains (e.g., dev.api.example.com).",
+        "options": {
+            "domain_entry": "example.org",
+            "active_scan_var": true,
+            "brute_force_var": true,
+            "recursive_brute_var": true,
+            "wordlist_entry": "small_wordlist.txt",
+            "output_file_entry": "recursive_brute.txt"
+        },
+        "example_output": "example.org\nwww.example.org\ndev.example.org\napi.example.org\ninternal.api.example.org\n"
+    },
+    {
+        "name": "Blacklist Domains",
+        "description": "Excludes specific domains from the enumeration results.",
+        "options": {
+            "domain_entry": "target.com",
+            "passive_scan_var": true,
+            "blacklist_domains_entry": "old.target.com,test.target.com",
+            "output_file_entry": "blacklist_domains.txt"
+        },
+        "example_output": "target.com\nwww.target.com\napi.target.com\n"
+    },
+    {
+        "name": "Whitelist Domains",
+        "description": "Only includes specified domains in the enumeration results.",
+        "options": {
+            "domain_entry": "main.example.com",
+            "passive_scan_var": true,
+            "whitelist_domains_entry": "main.example.com,dev.main.example.com",
+            "output_file_entry": "whitelist_domains.txt"
+        },
+        "example_output": "main.example.com\ndev.main.example.com\n"
+    },
+    {
+        "name": "Use HTTP Proxy",
+        "description": "Routes all HTTP requests through a specified proxy server (e.g., Burp Suite, Zap).",
+        "options": {
+            "domain_entry": "scanme.nmap.org",
+            "passive_scan_var": true,
+            "proxy_entry": "http://127.0.0.1:8080",
+            "output_file_entry": "proxied_scan.txt"
+        },
+        "example_output": "scanme.nmap.org\nwww.scanme.nmap.org\n(Traffic routed through proxy)\n"
+    },
+    {
+        "name": "Custom User-Agent",
+        "description": "Sets a custom User-Agent string for HTTP requests made by Amass.",
+        "options": {
+            "domain_entry": "example.net",
+            "passive_scan_var": true,
+            "user_agent_entry": "Mozilla/5.0 (Amass-Custom-Agent)",
+            "output_file_entry": "custom_ua.txt"
+        },
+        "example_output": "example.net\nsub.example.net\n(Custom User-Agent used)\n"
+    },
+    {
+        "name": "Save to Specific Directory",
+        "description": "Saves all Amass output files (databases, logs, etc.) to a specified directory.",
+        "options": {
+            "domain_entry": "test.com",
+            "passive_scan_var": true,
+            "dir_output_entry": "/tmp/amass_data",
+            "output_file_entry": "/tmp/amass_data/test_results.txt"
+        },
+        "example_output": "test.com\nwww.test.com\n(Output files saved in /tmp/amass_data)\n"
+    },
+    {
+        "name": "Show Amass Version",
+        "description": "Displays the installed Amass version and exits.",
+        "options": {
+            "show_version_var": true
+        },
+        "example_output": "amass v4.0.0\n"
+    },
+    {
+        "name": "Show Amass Help",
+        "description": "Displays the Amass help message and exits.",
+        "options": {
+            "show_help_var": true
+        },
+        "example_output": "Usage of amass:\n  -active\n        Attempt to obtain certificates and perform other active recon\n  -brute\n        Execute brute-force enumeration\n  ...\n"
+    },
+    {
+        "name": "Active Scan with Rate Limit",
+        "description": "Sets a rate limit for requests during active enumeration to avoid detection.",
+        "options": {
+            "domain_entry": "target.org",
+            "active_scan_var": true,
+            "rate_limit_entry": "5",
+            "output_file_entry": "rate_limited_active.txt"
+        },
+        "example_output": "target.org\nwww.target.org\n(Scan performed with rate limit of 5 requests/sec)\n"
+    }
+]

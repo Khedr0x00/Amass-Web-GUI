@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amass Web GUI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+        }
+        .tab-button.active {
+            background-color: #3498DB; /* Peter River Blue */
+            color: black;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Custom scrollbar for output area */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #2C3E50; /* Dark Blue/Grey */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #3498DB; /* Peter River Blue */
+            border-radius: 10px;
+            border: 3px solid #2C3E50;
+        }
+        .custom-scrollbar::-webkit-scrollbar-corner {
+            background: #2C3E50;
+        }
+
+        /* Specific colors for Amass output */
+        .output-green { color: #2ECC71; } /* Emerald Green */
+        .output-red { color: #E74C3C; }   /* Alizarin Red */
+        .output-blue { color: #3498DB; }  /* Peter River Blue */
+        .output-orange { color: #F39C12; } /* Orange */
+        .output-default { color: #ECF0F1; } /* Light Grey */
+        .highlight { background-color: yellow; color: black; }
+
+        /* Help popup styling */
+        .help-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2C3E50; /* Dark Blue/Grey */
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #3498DB; /* Add a border for better visibility */
+        }
+        .help-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8); /* Dark modal background */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #1a202c; /* Modal background */
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #3498DB; /* Blue border for modal */
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #3498DB;
+            margin-bottom: 15px;
+        }
+        .modal-header h2 {
+            @apply text-xl font-semibold text-blue-400; /* Blue modal title */
+        }
+        .modal-close {
+            @apply text-gray-400 hover:text-blue-400 text-2xl font-bold;
+            cursor: pointer;
+        }
+        .modal-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            @apply text-gray-300;
+        }
+        .modal-footer {
+            padding-top: 15px;
+            border-top: 1px solid #3498DB;
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        /* Input field styling */
+        input[type="text"], input[type="number"], select, textarea {
+            @apply bg-gray-600 text-white rounded-md border border-gray-500 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-2;
+        }
+        input[type="checkbox"] {
+            @apply form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500;
+        }
+
+        /* Button styling */
+        .btn-primary {
+            @apply px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 flex items-center justify-center transition-colors duration-200;
+        }
+        .btn-secondary {
+            @apply px-4 py-2 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 flex items-center justify-center transition-colors duration-200;
+        }
+        .btn-success {
+            @apply px-6 py-3 bg-green-600 text-white rounded-lg text-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 flex items-center transition-colors duration-200 transform hover:scale-105;
+        }
+        .btn-danger {
+            @apply px-6 py-3 bg-red-600 text-white rounded-lg text-lg font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 flex items-center transition-colors duration-200 transform hover:scale-105;
+        }
+        .btn-info {
+            @apply px-6 py-3 bg-purple-600 text-white rounded-lg text-lg font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 flex items-center transition-colors duration-200 transform hover:scale-105;
+        }
+    </style>
+</head>
+<body class="p-4 min-h-screen flex flex-col items-center">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-6xl mb-6">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-blue-400">Amass Web GUI</h1>
+            <div class="flex space-x-2">
+                <button id="install_amass_linux_button" class="btn-primary">
+                    <i data-lucide="download" class="w-5 h-5 mr-2"></i> Install Amass (Linux)
+                </button>
+                <button id="install_amass_termux_button" class="btn-primary">
+                    <i data-lucide="download" class="w-5 h-5 mr-2"></i> Install Amass (Termux)
+                </button>
+                <button id="download_amass_windows_button" class="btn-primary">
+                    <i data-lucide="download" class="w-5 h-5 mr-2"></i> Download Amass (Windows)
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex flex-wrap justify-center bg-gray-700 rounded-t-lg p-2 mb-4">
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600 active" data-tab="domain">Domain</button>
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600" data-tab="scan-types">Scan Types</button>
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600" data-tab="sources">Sources</button>
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600" data-tab="resolvers">Resolvers</button>
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600" data-tab="output">Output</button>
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600" data-tab="exclusions">Exclusions/Inclusions</button>
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600" data-tab="timing">Timing/Performance</button>
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600" data-tab="advanced">Advanced</button>
+            <button class="tab-button px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-blue-600" data-tab="examples">Examples</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tab-content-container" class="bg-gray-700 p-4 rounded-b-lg mb-4 max-h-[500px] overflow-y-auto custom-scrollbar">
+            <!-- Domain Tab -->
+            <div id="domain" class="tab-content active">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">Target Domain</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <label for="domain_entry" class="w-48 text-right pr-4">Domain(s):</label>
+                        <input type="text" id="domain_entry" name="domain_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="e.g., example.com, sub.example.org" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('The target domain(s) for subdomain enumeration. Multiple domains can be separated by commas.')">?</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scan Types Tab -->
+            <div id="scan-types" class="tab-content">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">Scan Types</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="passive_scan_var" name="passive_scan_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="passive_scan_var" class="ml-2">Passive Enumeration (-passive)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Collects subdomain names without actively querying the target (e.g., from public datasets, search engines).')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="active_scan_var" name="active_scan_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="active_scan_var" class="ml-2">Active Enumeration (-active)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Actively queries DNS servers and performs other active reconnaissance techniques.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="brute_force_var" name="brute_force_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="brute_force_var" class="ml-2">Brute Force (-brute)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Performs brute-force enumeration using a wordlist to discover subdomains.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="wordlist_entry" class="w-48 text-right pr-4">Wordlist File (-w):</label>
+                        <input type="text" id="wordlist_entry" name="wordlist_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="/path/to/wordlist.txt" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Specify a custom wordlist file for brute-force enumeration.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="recursive_brute_var" name="recursive_brute_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="recursive_brute_var" class="ml-2">Recursive Brute Force (-r)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Recursively brute-force subdomains (e.g., a.b.example.com after b.example.com is found).')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="reverse_dns_var" name="reverse_dns_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="reverse_dns_var" class="ml-2">Disable Reverse DNS (--noreverse)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Do not perform reverse DNS lookups during active enumeration.')">?</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sources Tab -->
+            <div id="sources" class="tab-content">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">Data Sources</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <label for="include_sources_entry" class="w-48 text-right pr-4">Include Sources (-src):</label>
+                        <input type="text" id="include_sources_entry" name="include_sources_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="e.g., certspotter,virustotal" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Comma-separated list of data sources to include (e.g., certspotter, virustotal). Use -show to see available sources.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="exclude_sources_entry" class="w-48 text-right pr-4">Exclude Sources (-exclude):</label>
+                        <input type="text" id="exclude_sources_entry" name="exclude_sources_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="e.g., baidu,shodan" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Comma-separated list of data sources to exclude.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="list_sources_var" name="list_sources_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="list_sources_var" class="ml-2">List Available Sources (-show)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Shows all available data sources that Amass can use.')">?</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resolvers Tab -->
+            <div id="resolvers" class="tab-content">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">DNS Resolvers</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <label for="resolvers_entry" class="w-48 text-right pr-4">Custom Resolvers (-r):</label>
+                        <input type="text" id="resolvers_entry" name="resolvers_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="e.g., 8.8.8.8,1.1.1.1" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Comma-separated list of DNS server IP addresses to use for resolution.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="resolver_file_entry" class="w-48 text-right pr-4">Resolver File (-rf):</label>
+                        <input type="text" id="resolver_file_entry" name="resolver_file_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="/path/to/resolvers.txt" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('File containing a list of DNS server IP addresses (one per line) to use.')">?</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Tab -->
+            <div id="output" class="tab-content">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">Output Options</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <label for="output_file_entry" class="w-48 text-right pr-4">Output File (-o):</label>
+                        <input type="text" id="output_file_entry" name="output_file_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="output.txt" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Save the results to a plain text file.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="json_output_file_entry" class="w-48 text-right pr-4">JSON Output File (-json):</label>
+                        <input type="text" id="json_output_file_entry" name="json_output_file_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="output.json" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Save the results to a JSON file.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="verbose_var" name="verbose_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="verbose_var" class="ml-2">Verbose Output (-v)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Display verbose information during the enumeration.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="silent_var" name="silent_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="silent_var" class="ml-2">Silent Output (-silent)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Only display subdomain names in the output.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="dir_output_entry" class="w-48 text-right pr-4">Output Directory (-dir):</label>
+                        <input type="text" id="dir_output_entry" name="dir_output_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="./amass_results" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Specify a directory to save all output files.')">?</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exclusions/Inclusions Tab -->
+            <div id="exclusions" class="tab-content">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">Exclusions & Inclusions</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <label for="blacklist_domains_entry" class="w-48 text-right pr-4">Blacklist Domains (-bl):</label>
+                        <input type="text" id="blacklist_domains_entry" name="blacklist_domains_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="e.g., example.net,test.com" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Comma-separated list of domains to blacklist from the enumeration.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="whitelist_domains_entry" class="w-48 text-right pr-4">Whitelist Domains (-wl):</label>
+                        <input type="text" id="whitelist_domains_entry" name="whitelist_domains_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="e.g., important.com" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Comma-separated list of domains to whitelist (only enumerate these).')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="blacklist_subdomains_entry" class="w-48 text-right pr-4">Blacklist Subdomains (-blacklist):</label>
+                        <input type="text" id="blacklist_subdomains_entry" name="blacklist_subdomains_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="e.g., dev.example.com,test.example.com" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Comma-separated list of subdomains to blacklist from the enumeration.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="whitelist_subdomains_entry" class="w-48 text-right pr-4">Whitelist Subdomains (-whitelist):</label>
+                        <input type="text" id="whitelist_subdomains_entry" name="whitelist_subdomains_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="e.g., api.example.com" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Comma-separated list of subdomains to whitelist (only enumerate these).')">?</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timing/Performance Tab -->
+            <div id="timing" class="tab-content">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">Timing/Performance</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <label for="max_dns_queries_entry" class="w-48 text-right pr-4">Max DNS Queries (-max-dns-queries):</label>
+                        <input type="number" id="max_dns_queries_entry" name="max_dns_queries_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="1000" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Maximum number of concurrent DNS queries.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="max_retries_entry" class="w-48 text-right pr-4">Max Retries (-max-retries):</label>
+                        <input type="number" id="max_retries_entry" name="max_retries_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="5" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Maximum number of retries for failed DNS queries.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="timeout_entry" class="w-48 text-right pr-4">Timeout (-timeout):</label>
+                        <input type="text" id="timeout_entry" name="timeout_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="10s" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Overall timeout for the enumeration process (e.g., 10s, 5m, 1h).')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="rate_limit_entry" class="w-48 text-right pr-4">Rate Limit (-rate-limit):</label>
+                        <input type="number" id="rate_limit_entry" name="rate_limit_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="10" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Maximum number of requests per second to data sources.')">?</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Tab -->
+            <div id="advanced" class="tab-content">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">Advanced Options</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center">
+                        <label for="config_file_entry" class="w-48 text-right pr-4">Config File (-config):</label>
+                        <input type="text" id="config_file_entry" name="config_file_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="/path/to/config.ini" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Specify a custom Amass configuration file.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="proxy_entry" class="w-48 text-right pr-4">Proxy (-proxy):</label>
+                        <input type="text" id="proxy_entry" name="proxy_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="http://127.0.0.1:8080" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Specify a proxy server (e.g., http://host:port, socks5://host:port).')">?</button>
+                    </div>
+                    <div class="flex items-start">
+                        <label for="http_headers_entry" class="w-48 text-right pr-4 pt-2">HTTP Headers (-headers):</label>
+                        <textarea id="http_headers_entry" name="http_headers_entry" rows="4" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="User-Agent: Mozilla/5.0&#10;Accept-Language: en-US" onkeyup="generateCommand()"></textarea>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Custom HTTP headers to use for web requests (one header per line, e.g., User-Agent: MyCustomAgent).')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="user_agent_entry" class="w-48 text-right pr-4">User-Agent (--user-agent):</label>
+                        <input type="text" id="user_agent_entry" name="user_agent_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="Mozilla/5.0 (Amass)" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Specify a custom User-Agent string for HTTP requests.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <label for="data_path_entry" class="w-48 text-right pr-4">Data Path (-dir):</label>
+                        <input type="text" id="data_path_entry" name="data_path_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="/root/.config/amass" onkeyup="generateCommand()">
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Specify a custom directory for Amass data files (e.g., databases, logs).')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="show_version_var" name="show_version_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="show_version_var" class="ml-2">Show Version (-version)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Show Amass version number and exit.')">?</button>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="show_help_var" name="show_help_var" class="form-checkbox h-5 w-5 text-blue-600 rounded bg-gray-600 border-gray-500" onchange="generateCommand()">
+                        <label for="show_help_var" class="ml-2">Show Help (-h)</label>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Display help message and exit.')">?</button>
+                    </div>
+                    <div class="flex items-start">
+                        <label for="additional_args_entry" class="w-48 text-right pr-4 pt-2">Additional Arguments:</label>
+                        <textarea id="additional_args_entry" name="additional_args_entry" rows="4" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" placeholder="-ip -ports 80,443" onkeyup="generateCommand()"></textarea>
+                        <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" onclick="showHelp('Any other Amass arguments not covered by the GUI. Enter them exactly as you would on the command line (e.g., \'-ip -ports 80,443\').')">?</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Examples Tab -->
+            <div id="examples" class="tab-content">
+                <h2 class="text-xl font-semibold text-blue-300 mb-4">Examples</h2>
+                <div class="mb-4 flex items-center">
+                    <label for="example_search_entry" class="w-32 text-right pr-4">Search Examples:</label>
+                    <input type="text" id="example_search_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" onkeyup="filterExamples()">
+                    <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" onclick="clearExampleSearch()">Clear Search</button>
+                </div>
+                <div id="examples_list" class="grid grid-cols-1 gap-4">
+                    <!-- Examples will be loaded here by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Generated Command -->
+        <div class="bg-gray-700 p-4 rounded-lg shadow-md mb-4">
+            <h2 class="text-xl font-semibold text-blue-300 mb-2">Generated Amass Command</h2>
+            <textarea id="command_text" class="w-full h-24 p-2 rounded bg-gray-900 text-blue-400 font-mono text-sm resize-none custom-scrollbar" readonly></textarea>
+            <div class="flex justify-end mt-2 space-x-2">
+                <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200" onclick="copyCommand()">Copy Command</button>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-200" onclick="generateCommand()">Generate Command</button>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-center space-x-4 mb-4">
+            <button id="run_amass_button" class="btn-success">
+                <i data-lucide="play" class="w-6 h-6 mr-2"></i> Run Amass
+            </button>
+            <button class="btn-danger" onclick="clearOutput()">
+                <i data-lucide="trash-2" class="w-6 h-6 mr-2"></i> Clear Output
+            </button>
+            <button class="btn-info" onclick="saveOutput()">
+                <i data-lucide="save" class="w-6 h-6 mr-2"></i> Save Output
+            </button>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="status_bar" class="bg-gray-900 text-white text-sm p-2 rounded-md mb-4 text-center">Ready</div>
+
+        <!-- Amass Output -->
+        <div class="bg-gray-700 p-4 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold text-blue-300 mb-2">Amass Output</h2>
+            <div class="flex items-center mb-2">
+                <label for="search_entry" class="pr-2">Search:</label>
+                <input type="text" id="search_entry" class="flex-1 p-2 rounded bg-gray-600 text-white border border-gray-500" onkeyup="searchOutput()">
+                <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" onclick="searchOutput()">Search</button>
+                <button class="ml-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" onclick="clearSearchHighlight()">Clear Search</button>
+            </div>
+            <pre id="output_text" class="w-full h-96 p-2 rounded bg-gray-900 text-gray-200 font-mono text-sm overflow-auto custom-scrollbar"></pre>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-gray-500 text-sm mt-4">
+        Created by khedr0x00
+    </div>
+
+    <!-- Global Message/Alert Modal -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="messageModalTitle">Alert</h2>
+                <span class="modal-close" onclick="closeMessageModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="messageModalBody"></div>
+            <div class="modal-footer">
+                <button onclick="closeMessageModal()" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal for Linux/Termux Installation -->
+    <div id="installConfirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="installConfirmModalTitle">Confirm Installation</h2>
+                <span class="modal-close" onclick="closeInstallConfirmModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="installConfirmModalBody"></div>
+            <div class="modal-footer flex justify-end space-x-4">
+                <button onclick="closeInstallConfirmModal()" class="btn-secondary">Cancel</button>
+                <button id="confirmInstallButton" class="btn-success">Install Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example Output Modal -->
+    <div id="exampleOutputModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="exampleOutputModalTitle">Example Output</h2>
+                <span class="modal-close" onclick="closeExampleOutputModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <pre id="exampleOutputModalText" class="w-full h-auto p-2 rounded bg-gray-900 text-gray-200 font-mono text-sm overflow-auto custom-scrollbar"></pre>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeExampleOutputModal()" class="btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Global variable to store examples
+        let allExamples = [];
+        let currentScanId = null;
+        let pollInterval = null;
+        let searchStartIndex = 0; // For incremental search in output
+        let currentOutputBuffer = ""; // Buffer to accumulate real-time output
+
+        // Function to show/hide tabs
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            generateCommand(); // Regenerate command on tab change
+        }
+
+        // Event listeners for tab buttons
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                showTab(button.dataset.tab);
+            });
+        });
+
+        // --- Helper for showing custom modals ---
+        function showMessageModal(title, message, isHtml = false) {
+            document.getElementById('messageModalTitle').innerText = title;
+            const messageBody = document.getElementById('messageModalBody');
+            if (isHtml) {
+                messageBody.innerHTML = message;
+            } else {
+                messageBody.innerText = message;
+            }
+            document.getElementById('messageModal').style.display = 'flex';
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        function showInstallConfirmModal(title, message, onConfirm) {
+            document.getElementById('installConfirmModalTitle').innerText = title;
+            document.getElementById('installConfirmModalBody').innerHTML = message;
+            const confirmButton = document.getElementById('confirmInstallButton');
+            confirmButton.onclick = () => {
+                closeInstallConfirmModal();
+                onConfirm();
+            };
+            document.getElementById('installConfirmModal').style.display = 'flex';
+        }
+
+        function closeInstallConfirmModal() {
+            document.getElementById('installConfirmModal').style.display = 'none';
+        }
+
+        function showExampleOutputModal(title, output) {
+            document.getElementById('exampleOutputModalTitle').innerText = title;
+            const outputPre = document.getElementById('exampleOutputModalText');
+            outputPre.innerHTML = ''; // Clear previous content
+
+            // Apply coloring based on Amass-like output (subdomains, errors, info)
+            insertColoredText(outputPre, output);
+            document.getElementById('exampleOutputModal').style.display = 'flex';
+        }
+
+        function closeExampleOutputModal() {
+            document.getElementById('exampleOutputModal').style.display = 'none';
+        }
+
+
+        // Function to collect form data
+        function getFormData() {
+            const formData = {};
+            document.querySelectorAll('#tab-content-container input, #tab-content-container select, #tab-content-container textarea').forEach(element => {
+                if (element.type === 'checkbox') {
+                    formData[element.id] = element.checked;
+                } else if (element.type === 'number') {
+                    formData[element.id] = element.value ? parseFloat(element.value) : '';
+                }
+                else {
+                    formData[element.id] = element.value;
+                }
+            });
+            return formData;
+        }
+
+        // Function to generate Amass command
+        async function generateCommand() {
+            const formData = getFormData();
+            try {
+                const response = await fetch('/generate_command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+                const data = await response.json();
+                document.getElementById('command_text').value = data.command;
+            } catch (error) {
+                console.error('Error generating command:', error);
+                document.getElementById('command_text').value = 'Error generating command.';
+            }
+        }
+
+        // Function to copy command to clipboard
+        function copyCommand() {
+            const commandText = document.getElementById('command_text');
+            commandText.select();
+            document.execCommand('copy');
+            showMessageModal('Command Copied', 'The command has been copied to your clipboard!');
+        }
+
+        // Function to run Amass
+        async function runAmass() {
+            if (currentScanId) {
+                showMessageModal('Amass Running', 'Amass is already running. Please wait for it to finish.');
+                return;
+            }
+
+            const command = document.getElementById('command_text').value;
+            if (!command) {
+                showMessageModal('Error', 'No command to run.');
+                return;
+            }
+
+            // Disable run button and clear output
+            document.getElementById('run_amass_button').disabled = true;
+            document.getElementById('output_text').innerHTML = '';
+            currentOutputBuffer = "";
+            clearSearchHighlight();
+            showStatus('Starting Amass...', 'blue');
+
+            try {
+                const response = await fetch('/run_amass', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: command }),
+                });
+                const data = await response.json();
+                if (data.status === 'error') {
+                    showMessageModal('Error', data.message);
+                    showStatus(`Error: ${data.message}`, 'red');
+                    document.getElementById('run_amass_button').disabled = false;
+                } else {
+                    currentScanId = data.scan_id;
+                    showStatus(`Amass scan started (ID: ${currentScanId}). Fetching output...`, 'blue');
+                    // Start polling for output
+                    pollInterval = setInterval(pollOutput, 500); // Poll every 500ms
+                }
+            } catch (error) {
+                console.error('Error starting Amass:', error);
+                showMessageModal('Error', 'An error occurred while starting Amass.');
+                showStatus('An error occurred while starting Amass.', 'red');
+                document.getElementById('run_amass_button').disabled = false;
+            }
+        }
+
+        // Polling for Amass output
+        async function pollOutput() {
+            if (!currentScanId) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+                return;
+            }
+
+            try {
+                const response = await fetch(`/get_scan_output/${currentScanId}`);
+                const data = await response.json();
+                const outputTextElement = document.getElementById('output_text');
+                
+                if (data.output) {
+                    // Only append new output to the buffer
+                    const newOutputSegment = data.output.substring(currentOutputBuffer.length);
+                    currentOutputBuffer += newOutputSegment;
+                    insertColoredText(outputTextElement, currentOutputBuffer);
+                }
+
+                if (data.status === 'running') {
+                    showStatus('Amass is running...', 'blue');
+                } else if (data.status === 'completed' || data.status === 'success' || data.status === 'error') {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                    currentScanId = null;
+                    currentOutputBuffer = data.output; // Get final complete output
+                    insertColoredText(outputTextElement, currentOutputBuffer);
+                    if (data.status === 'completed' || data.status === 'success') {
+                        showStatus('Amass scan completed successfully.', 'green');
+                    } else {
+                        showStatus(`Scan failed: ${data.message || 'Unknown error'}`, 'red');
+                        showMessageModal('Scan Error', data.message || 'An unknown error occurred during the scan.');
+                    }
+                    document.getElementById('run_amass_button').disabled = false;
+                    // Re-enable install buttons if they were disabled for installation
+                    document.getElementById('install_amass_linux_button').disabled = false;
+                    document.getElementById('install_amass_termux_button').disabled = false;
+                    document.getElementById('download_amass_windows_button').disabled = false;
+                } else if (data.status === 'not_found') {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                    currentScanId = null;
+                    showStatus(`Scan failed: ${data.message || 'Scan ID not found or expired.'}`, 'red');
+                    showMessageModal('Scan Error', data.message || 'Scan ID not found or expired.');
+                    document.getElementById('run_amass_button').disabled = false;
+                    // Re-enable install buttons if they were disabled for installation
+                    document.getElementById('install_amass_linux_button').disabled = false;
+                    document.getElementById('install_amass_termux_button').disabled = false;
+                    document.getElementById('download_amass_windows_button').disabled = false;
+                }
+            } catch (error) {
+                console.error('Error polling output:', error);
+                showMessageModal('Polling Error', 'An error occurred while fetching output.');
+                showStatus('An error occurred while fetching output.', 'red');
+                clearInterval(pollInterval);
+                pollInterval = null;
+                currentScanId = null;
+                document.getElementById('run_amass_button').disabled = false;
+                // Re-enable install buttons if they were disabled for installation
+                document.getElementById('install_amass_linux_button').disabled = false;
+                document.getElementById('install_amass_termux_button').disabled = false;
+                document.getElementById('download_amass_windows_button').disabled = false;
+            }
+        }
+
+        // Helper to insert colored text based on Amass output patterns
+        function insertColoredText(element, text) {
+            element.innerHTML = ''; // Clear current content to re-insert with spans
+            const lines = text.split('\n');
+            const fragment = document.createDocumentFragment();
+
+            lines.forEach(line => {
+                const span = document.createElement('span');
+                let className = 'output-default';
+
+                if (line.toLowerCase().includes('.com') || line.toLowerCase().includes('.org') || line.toLowerCase().includes('.net')) {
+                    // Simple heuristic for subdomains
+                    className = 'output-green';
+                } else if (line.toLowerCase().includes('error') || line.toLowerCase().includes('failed')) {
+                    className = 'output-red';
+                } else if (line.toLowerCase().includes('starting amass') || line.toLowerCase().includes('completed') || line.toLowerCase().includes('executing command') || line.toLowerCase().includes('detected')) {
+                    className = 'output-blue';
+                } else if (line.toLowerCase().includes('warning')) {
+                    className = 'output-orange';
+                }
+                
+                span.className = className;
+                span.textContent = line + '\n'; // Add newline back for pre tag
+                fragment.appendChild(span);
+            });
+            element.appendChild(fragment);
+            element.scrollTop = element.scrollHeight; // Scroll to bottom
+        }
+
+        // Function to clear output
+        function clearOutput() {
+            document.getElementById('output_text').innerHTML = '';
+            currentOutputBuffer = "";
+            showStatus('Ready');
+            clearSearchHighlight();
+            if (currentScanId) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+                currentScanId = null;
+            }
+        }
+
+        // Function to save output
+        async function saveOutput() {
+            const outputContent = document.getElementById('output_text').innerText;
+            if (!outputContent.trim()) {
+                showMessageModal('Save Output', 'No output to save.');
+                return;
+            }
+
+            // Prompt for filename (simple browser prompt)
+            const defaultFilename = `amass_output_${new Date().toISOString().slice(0,10)}.txt`;
+            const filename = prompt("Enter filename to save:", defaultFilename);
+
+            if (filename) {
+                try {
+                    const response = await fetch('/save_output', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: outputContent, filename: filename })
+                    });
+                    const data = await response.json();
+
+                    if (data.status === 'success') {
+                        showMessageModal('Save Output', `Output saved on the server. You can download it now.`);
+                        // Offer download link
+                        if (data.download_url) {
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = data.download_url;
+                            downloadLink.download = filename; // Suggest filename for download
+                            downloadLink.style.display = 'none';
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+                        }
+                    } else {
+                        showMessageModal('Save Error', `Failed to save file: ${data.message}`);
+                    }
+                } catch (error) {
+                    console.error('Error saving output:', error);
+                    showMessageModal('Save Error', `Failed to save file: ${error.message}`);
+                }
+            }
+        }
+
+        // Function to update status bar
+        function showStatus(message, color = 'white') {
+            const statusBar = document.getElementById('status_bar');
+            statusBar.textContent = message;
+            statusBar.style.color = color;
+        }
+
+        // Function to search output
+        function searchOutput() {
+            const searchTerm = document.getElementById('search_entry').value.trim().toLowerCase();
+            const outputTextElement = document.getElementById('output_text');
+            const fullText = outputTextElement.textContent; // Use textContent to get plain text
+
+            clearSearchHighlight(); // Clear existing highlights first
+
+            if (!searchTerm) {
+                searchStartIndex = 0;
+                return;
+            }
+
+            let found = false;
+            let newContent = '';
+            let lastIndex = 0;
+
+            const regex = new RegExp(searchTerm, 'gi'); // 'gi' for global and case-insensitive
+
+            let match;
+            while ((match = regex.exec(fullText)) !== null) {
+                found = true;
+                const index = match.index;
+                const matchedText = match[0];
+
+                // Append content before the match
+                newContent += escapeHtml(fullText.substring(lastIndex, index));
+                // Append the highlighted match
+                newContent += `<mark class="highlight">${escapeHtml(matchedText)}</mark>`;
+                lastIndex = index + matchedText.length;
+            }
+            newContent += escapeHtml(fullText.substring(lastIndex)); // Append remaining content
+
+            outputTextElement.innerHTML = newContent;
+
+            if (!found) {
+                showMessageModal('Search', `No occurrences of '${searchTerm}' found.`);
+            } else {
+                // Scroll to the first highlighted element
+                const firstHighlight = outputTextElement.querySelector('mark.highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        // Function to clear search highlight
+        function clearSearchHighlight() {
+            const outputTextElement = document.getElementById('output_text');
+            const currentContent = outputTextElement.textContent; // Get plain text content
+            outputTextElement.innerHTML = ''; // Clear existing content
+            insertColoredText(outputTextElement, currentContent); // Re-insert without highlights
+            searchStartIndex = 0;
+        }
+
+        // Function to show help popup
+        function showHelp(helpText) {
+            const overlay = document.createElement('div');
+            overlay.className = 'help-popup-overlay';
+            overlay.onclick = () => {
+                document.body.removeChild(overlay);
+                document.body.removeChild(popup);
+            };
+            document.body.appendChild(overlay);
+
+            const popup = document.createElement('div');
+            popup.className = 'help-popup';
+            popup.innerHTML = `
+                <h3 class="text-xl font-bold text-blue-300 mb-4">Help</h3>
+                <div class="flex-grow overflow-y-auto custom-scrollbar p-2 bg-gray-600 rounded text-gray-200 text-sm mb-4">
+                    ${helpText.replace(/\n/g, '<br>')}
+                </div>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md self-center" onclick="this.parentNode.parentNode.removeChild(this.parentNode); document.body.removeChild(document.querySelector('.help-popup-overlay'));">Close</button>
+            `;
+            document.body.appendChild(popup);
+        }
+
+        // --- Examples Tab Functions ---
+        async function loadExamples() {
+            try {
+                // Fetch examples from the backend (assuming /get_examples endpoint)
+                const response = await fetch('/get_examples');
+                if (response.ok) {
+                    allExamples = await response.json();
+                } else {
+                    // Fallback to hardcoded examples if backend fails
+                    console.warn("Could not fetch examples from backend, using hardcoded examples.");
+                    allExamples = [
+                        {
+                            "name": "Basic Passive Scan",
+                            "description": "Performs a basic passive subdomain enumeration using default sources.",
+                            "options": {
+                                "domain_entry": "owasp.org",
+                                "passive_scan_var": true,
+                                "output_file_entry": "owasp_passive.txt"
+                            },
+                            "example_output": "owasp.org\nwww.owasp.org\ndocs.owasp.org\ncommunity.owasp.org\n"
+                        },
+                        {
+                            "name": "Active Scan with Brute Force",
+                            "description": "Performs an active scan including brute-force enumeration with a custom wordlist.",
+                            "options": {
+                                "domain_entry": "example.com",
+                                "active_scan_var": true,
+                                "brute_force_var": true,
+                                "wordlist_entry": "subdomains.txt",
+                                "output_file_entry": "example_active_brute.txt"
+                            },
+                            "example_output": "example.com\nwww.example.com\ndev.example.com\napi.example.com\n"
+                        },
+                        {
+                            "name": "Passive Scan with Specific Sources",
+                            "description": "Uses only specific data sources for passive enumeration.",
+                            "options": {
+                                "domain_entry": "google.com",
+                                "passive_scan_var": true,
+                                "include_sources_entry": "certspotter,virustotal",
+                                "output_file_entry": "google_src.txt"
+                            },
+                            "example_output": "google.com\nmail.google.com\ndrive.google.com\nsupport.google.com\n"
+                        },
+                        {
+                            "name": "Active Scan with Custom Resolvers",
+                            "description": "Performs an active scan using a list of custom DNS resolvers.",
+                            "options": {
+                                "domain_entry": "facebook.com",
+                                "active_scan_var": true,
+                                "resolvers_entry": "8.8.8.8,1.1.1.1",
+                                "output_file_entry": "facebook_resolvers.txt"
+                            },
+                            "example_output": "facebook.com\nm.facebook.com\ndevelopers.facebook.com\n"
+                        },
+                        {
+                            "name": "Output to JSON File",
+                            "description": "Enumerates subdomains and saves the output in JSON format.",
+                            "options": {
+                                "domain_entry": "twitter.com",
+                                "passive_scan_var": true,
+                                "json_output_file_entry": "twitter_output.json"
+                            },
+                            "example_output": "[{\"name\":\"twitter.com\",\"domain\":\"twitter.com\",...},{\"name\":\"api.twitter.com\",\"domain\":\"twitter.com\",...}]"
+                        },
+                        {
+                            "name": "Silent Output",
+                            "description": "Only prints the subdomain names to the console, without extra information.",
+                            "options": {
+                                "domain_entry": "microsoft.com",
+                                "passive_scan_var": true,
+                                "silent_var": true
+                            },
+                            "example_output": "microsoft.com\nwww.microsoft.com\ndocs.microsoft.com\n"
+                        },
+                        {
+                            "name": "Exclude Specific Sources",
+                            "description": "Runs a passive scan while excluding certain data sources.",
+                            "options": {
+                                "domain_entry": "apple.com",
+                                "passive_scan_var": true,
+                                "exclude_sources_entry": "crtsh",
+                                "output_file_entry": "apple_no_crtsh.txt"
+                            },
+                            "example_output": "apple.com\nsupport.apple.com\ndeveloper.apple.com\n"
+                        },
+                        {
+                            "name": "Limit DNS Queries",
+                            "description": "Sets a maximum number of concurrent DNS queries to control scan speed.",
+                            "options": {
+                                "domain_entry": "amazon.com",
+                                "active_scan_var": true,
+                                "max_dns_queries_entry": "500",
+                                "output_file_entry": "amazon_limited_dns.txt"
+                            },
+                            "example_output": "amazon.com\naws.amazon.com\nprime.amazon.com\n"
+                        },
+                        {
+                            "name": "Set Enumeration Timeout",
+                            "description": "Sets a maximum time for the entire enumeration process.",
+                            "options": {
+                                "domain_entry": "wikipedia.org",
+                                "passive_scan_var": true,
+                                "timeout_entry": "5m",
+                                "output_file_entry": "wiki_timeout.txt"
+                            },
+                            "example_output": "wikipedia.org\nen.wikipedia.org\nde.wikipedia.org\n"
+                        },
+                        {
+                            "name": "Use Custom Configuration File",
+                            "description": "Runs Amass with a custom configuration file.",
+                            "options": {
+                                "domain_entry": "example.net",
+                                "passive_scan_var": true,
+                                "config_file_entry": "/etc/amass/config.ini",
+                                "output_file_entry": "custom_config.txt"
+                            },
+                            "example_output": "example.net\nsub1.example.net\n"
+                        }
+                    ];
+                }
+                filterExamples(); // Display all examples initially
+            } catch (error) {
+                console.error('Error loading examples:', error);
+                showStatus('Error loading examples. Using hardcoded examples.', 'red');
+                // Ensure allExamples is populated even if fetch fails
+                allExamples = [
+                    {
+                        "name": "Basic Passive Scan",
+                        "description": "Performs a basic passive subdomain enumeration using default sources.",
+                        "options": {
+                            "domain_entry": "owasp.org",
+                            "passive_scan_var": true,
+                            "output_file_entry": "owasp_passive.txt"
+                        },
+                        "example_output": "owasp.org\nwww.owasp.org\ndocs.owasp.org\ncommunity.owasp.org\n"
+                    },
+                    {
+                        "name": "Active Scan with Brute Force",
+                        "description": "Performs an active scan including brute-force enumeration with a custom wordlist.",
+                        "options": {
+                            "domain_entry": "example.com",
+                            "active_scan_var": true,
+                            "brute_force_var": true,
+                            "wordlist_entry": "subdomains.txt",
+                            "output_file_entry": "example_active_brute.txt"
+                        },
+                        "example_output": "example.com\nwww.example.com\ndev.example.com\napi.example.com\n"
+                    },
+                    {
+                        "name": "Passive Scan with Specific Sources",
+                        "description": "Uses only specific data sources for passive enumeration.",
+                        "options": {
+                            "domain_entry": "google.com",
+                            "passive_scan_var": true,
+                            "include_sources_entry": "certspotter,virustotal",
+                            "output_file_entry": "google_src.txt"
+                        },
+                        "example_output": "google.com\nmail.google.com\ndrive.google.com\nsupport.google.com\n"
+                    },
+                    {
+                        "name": "Active Scan with Custom Resolvers",
+                        "description": "Performs an active scan using a list of custom DNS resolvers.",
+                        "options": {
+                            "domain_entry": "facebook.com",
+                            "active_scan_var": true,
+                            "resolvers_entry": "8.8.8.8,1.1.1.1",
+                            "output_file_entry": "facebook_resolvers.txt"
+                        },
+                        "example_output": "facebook.com\nm.facebook.com\ndevelopers.facebook.com\n"
+                    },
+                    {
+                        "name": "Output to JSON File",
+                        "description": "Enumerates subdomains and saves the output in JSON format.",
+                        "options": {
+                            "domain_entry": "twitter.com",
+                            "passive_scan_var": true,
+                            "json_output_file_entry": "twitter_output.json"
+                        },
+                        "example_output": "[{\"name\":\"twitter.com\",\"domain\":\"twitter.com\",...},{\"name\":\"api.twitter.com\",\"domain\":\"twitter.com\",...}]"
+                    },
+                    {
+                        "name": "Silent Output",
+                        "description": "Only prints the subdomain names to the console, without extra information.",
+                        "options": {
+                            "domain_entry": "microsoft.com",
+                            "passive_scan_var": true,
+                            "silent_var": true
+                        },
+                        "example_output": "microsoft.com\nwww.microsoft.com\ndocs.microsoft.com\n"
+                    },
+                    {
+                        "name": "Exclude Specific Sources",
+                        "description": "Runs a passive scan while excluding certain data sources.",
+                        "options": {
+                            "domain_entry": "apple.com",
+                            "passive_scan_var": true,
+                            "exclude_sources_entry": "crtsh",
+                            "output_file_entry": "apple_no_crtsh.txt"
+                        },
+                        "example_output": "apple.com\nsupport.apple.com\ndeveloper.apple.com\n"
+                    },
+                    {
+                        "name": "Limit DNS Queries",
+                        "description": "Sets a maximum number of concurrent DNS queries to control scan speed.",
+                        "options": {
+                            "domain_entry": "amazon.com",
+                            "active_scan_var": true,
+                            "max_dns_queries_entry": "500",
+                            "output_file_entry": "amazon_limited_dns.txt"
+                        },
+                        "example_output": "amazon.com\naws.amazon.com\nprime.amazon.com\n"
+                    },
+                    {
+                        "name": "Set Enumeration Timeout",
+                        "description": "Sets a maximum time for the entire enumeration process.",
+                        "options": {
+                            "domain_entry": "wikipedia.org",
+                            "passive_scan_var": true,
+                            "timeout_entry": "5m",
+                            "output_file_entry": "wiki_timeout.txt"
+                        },
+                        "example_output": "wikipedia.org\nen.wikipedia.org\nde.wikipedia.org\n"
+                    },
+                    {
+                        "name": "Use Custom Configuration File",
+                        "description": "Runs Amass with a custom configuration file.",
+                        "options": {
+                            "domain_entry": "example.net",
+                            "passive_scan_var": true,
+                            "config_file_entry": "/etc/amass/config.ini",
+                            "output_file_entry": "custom_config.txt"
+                        },
+                        "example_output": "example.net\nsub1.example.net\n"
+                    }
+                ];
+                filterExamples();
+            }
+        }
+
+
+        function filterExamples() {
+            const searchQuery = document.getElementById('example_search_entry').value.toLowerCase();
+            const examplesList = document.getElementById('examples_list');
+            examplesList.innerHTML = ''; // Clear current list
+
+            allExamples.forEach(example => {
+                if (example.name.toLowerCase().includes(searchQuery) || example.description.toLowerCase().includes(searchQuery)) {
+                    const exampleDiv = document.createElement('div');
+                    exampleDiv.className = 'bg-gray-800 p-4 rounded-lg shadow-md flex flex-col md:flex-row justify-between items-start md:items-center';
+                    exampleDiv.innerHTML = `
+                        <div>
+                            <h3 class="text-lg font-semibold text-blue-300">${escapeHtml(example.name)}</h3>
+                            <p class="text-sm text-gray-400 mb-2 md:mb-0">${escapeHtml(example.description)}</p>
+                        </div>
+                        <div class="flex mt-2 md:mt-0 space-x-2">
+                            <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm" onclick="loadExampleOptions(${escapeHtml(JSON.stringify(example.options))})">Select</button>
+                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-md text-sm" onclick="showExampleOutputModal('${escapeHtml(example.name)} Output', ${escapeHtml(JSON.stringify(example.example_output))})">Output</button>
+                        </div>
+                    `;
+                    examplesList.appendChild(exampleDiv);
+                }
+            });
+            lucide.createIcons(); // Re-render Lucide icons for new elements
+        }
+
+        function clearExampleSearch() {
+            document.getElementById('example_search_entry').value = '';
+            filterExamples();
+        }
+
+        function loadExampleOptions(options) {
+            clearAllInputs(); // Clear all inputs first
+
+            // Populate form fields with example options
+            for (const key in options) {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = options[key];
+                    } else if (element.tagName === 'TEXTAREA') {
+                        element.value = options[key];
+                    } else {
+                        element.value = options[key];
+                    }
+                }
+            }
+            generateCommand(); // Re-generate command after loading
+            showMessageModal('Example Loaded', 'Example options have been loaded. Check other tabs and the generated command.');
+            showTab('domain'); // Switch to domain tab
+        }
+
+        // Helper to escape HTML for safe display
+        function escapeHtml(text) {
+            if (typeof text !== 'string') {
+                text = String(text);
+            }
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Helper to unescape HTML entities (not strictly needed for this use case, but good to have)
+        function unescapeHtml(html) {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            return doc.documentElement.textContent;
+        }
+
+        function clearAllInputs() {
+            document.querySelectorAll('#tab-content-container input[type="text"], #tab-content-container input[type="number"], #tab-content-container textarea').forEach(element => {
+                element.value = '';
+            });
+            document.querySelectorAll('#tab-content-container input[type="checkbox"]').forEach(element => {
+                element.checked = false;
+            });
+            document.querySelectorAll('#tab-content-container select').forEach(element => {
+                element.value = ''; // Clear dropdown selection
+            });
+            // Reset specific default values if any
+            // document.getElementById('timing_template_var').value = 'normal'; // No direct equivalent for Amass
+            generateCommand();
+        }
+
+        // Function to handle Amass installation
+        async function handleAmassInstallation(platformType) {
+            const linuxButton = document.getElementById('install_amass_linux_button');
+            const termuxButton = document.getElementById('install_amass_termux_button');
+            const windowsButton = document.getElementById('download_amass_windows_button');
+
+            // Disable all install buttons during an installation attempt
+            linuxButton.disabled = true;
+            termuxButton.disabled = true;
+            windowsButton.disabled = true;
+
+            showStatus('Checking system and preparing for installation...', 'blue');
+            document.getElementById('output_text').innerHTML = ''; // Clear output area
+            currentOutputBuffer = ""; // Clear output buffer for installation logs
+
+            if (platformType === 'linux' || platformType === 'termux') {
+                const osName = platformType === 'termux' ? "Termux" : "Linux";
+                showInstallConfirmModal(
+                    'Install Amass',
+                    `Your operating system is <strong>${osName}</strong>. Do you want to install Amass now? This will attempt to install Go and then Amass. It might require superuser privileges and ask for your password in the server console.`,
+                    async () => {
+                        // This function will be called if the user confirms
+                        showStatus(`Installing Amass on ${osName}...`, 'blue');
+                        try {
+                            const response = await fetch('/install_amass', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ platform: platformType }) // Pass platform type to backend
+                            });
+                            const data = await response.json();
+
+                            if (data.status === 'error') {
+                                showStatus(`Amass installation failed: ${data.message}`, 'red');
+                                showMessageModal('Amass Installation Failed', `Failed to install/update Amass: ${data.message}<br><br>Output:<pre>${escapeHtml(data.output)}</pre>`, true);
+                                insertColoredText(document.getElementById('output_text'), data.output);
+                                // Re-enable buttons on error
+                                linuxButton.disabled = false;
+                                termuxButton.disabled = false;
+                                windowsButton.disabled = false;
+                            } else { // status is 'running' for real-time output
+                                currentScanId = data.scan_id; // Use the scan_id returned by the backend
+                                showStatus(`Amass installation started (ID: ${currentScanId}). Fetching output...`, 'blue');
+                                pollInterval = setInterval(pollOutput, 500); // Start polling for output
+                            }
+                        } catch (error) {
+                            console.error('Error during Amass installation fetch:', error);
+                            showStatus('An error occurred during installation.', 'red');
+                            showMessageModal('Amass Installation Error', `An error occurred while trying to install Amass: ${error.message}. Check server logs for more details.`);
+                            // Re-enable buttons on error
+                            linuxButton.disabled = false;
+                            termuxButton.disabled = false;
+                            windowsButton.disabled = false;
+                        }
+                    }
+                );
+            } else if (platformType === 'windows') {
+                const downloadMessage = `Amass cannot be installed directly via this web interface on Windows.
+                <br><br>
+                Please download it from the official Amass GitHub releases page:
+                <br><br>
+                <a href="https://github.com/owasp-amass/amass/releases" target="_blank" class="text-blue-400 hover:underline">Download Amass for Windows</a>
+                <br><br>
+                You will need to download the appropriate .zip file for your Windows architecture, extract it, and add the 'amass.exe' to your system's PATH.`;
+                showMessageModal('Install Amass', downloadMessage, true); // Use isHtml = true
+                showStatus('Amass installation is not directly supported on Windows via this interface.', 'orange');
+                // Re-enable buttons immediately for Windows as no backend process is started
+                linuxButton.disabled = false;
+                termuxButton.disabled = false;
+                windowsButton.disabled = false;
+            } else {
+                showMessageModal('Install Amass', `Amass installation is not automatically supported for your operating system (${navigator.platform}). Please install Amass manually.`);
+                showStatus('Amass installation is not supported for this system.', 'orange');
+                // Re-enable buttons immediately for unsupported OS
+                linuxButton.disabled = false;
+                termuxButton.disabled = false;
+                windowsButton.disabled = false;
+            }
+        }
+
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            generateCommand(); // Generate command on page load
+            loadExamples(); // Load examples for the Examples tab
+            document.getElementById('run_amass_button').addEventListener('click', runAmass);
+            
+            // New event listeners for specific installation buttons
+            document.getElementById('install_amass_linux_button').addEventListener('click', () => handleAmassInstallation('linux'));
+            document.getElementById('install_amass_termux_button').addEventListener('click', () => handleAmassInstallation('termux'));
+            document.getElementById('download_amass_windows_button').addEventListener('click', () => handleAmassInstallation('windows'));
+        });
+    </script>
+</body>
+</html>
